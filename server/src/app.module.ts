@@ -38,6 +38,7 @@ import { BookModule } from './modules/book/book.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { CoverModule } from './modules/cover/cover.module';
 import { KoboModule } from './modules/kobo/kobo.module';
+import { McpModule } from './modules/mcp/mcp.module';
 import { LibraryModule } from './modules/library/library.module';
 import { SmartScopeModule } from './modules/smart-scope/smart-scope.module';
 import { OpdsModule } from './modules/opds/opds.module';
@@ -169,6 +170,7 @@ import { BookMoveModule } from './modules/book-move/book-move.module';
     MaintenanceModule,
     BookMoveModule,
     BrowseCountsModule,
+    McpModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },

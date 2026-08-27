@@ -149,6 +149,58 @@ describe('MagicLinkService', () => {
     });
   });
 
+  describe('authenticate', () => {
+    it('throws UnauthorizedException when token not found', async () => {
+      const { service, magicLinkRepo } = makeService();
+      magicLinkRepo.findByTokenHash.mockResolvedValue(null);
+
+      await expect(service.authenticate('bad-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws UnauthorizedException when token is revoked', async () => {
+      const { service, magicLinkRepo } = makeService();
+      magicLinkRepo.findByTokenHash.mockResolvedValue({ id: 1, userId: 2, revokedAt: new Date(), isActive: true, expiresAt: null });
+
+      await expect(service.authenticate('token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws UnauthorizedException when token is deactivated', async () => {
+      const { service, magicLinkRepo } = makeService();
+      magicLinkRepo.findByTokenHash.mockResolvedValue({ id: 1, userId: 2, revokedAt: null, isActive: false, expiresAt: null });
+
+      await expect(service.authenticate('token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws UnauthorizedException when token is expired', async () => {
+      const { service, magicLinkRepo } = makeService();
+      magicLinkRepo.findByTokenHash.mockResolvedValue({ id: 1, userId: 2, revokedAt: null, isActive: true, expiresAt: new Date(Date.now() - 1000) });
+
+      await expect(service.authenticate('token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws UnauthorizedException when user is inactive', async () => {
+      const { service, magicLinkRepo, userService } = makeService();
+      magicLinkRepo.findByTokenHash.mockResolvedValue({ id: 1, userId: 2, revokedAt: null, isActive: true, expiresAt: null });
+      userService.findById.mockResolvedValue({ id: 2, active: false, username: 'demo' });
+
+      await expect(service.authenticate('token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('updates usage and returns user + token without issuing JWTs', async () => {
+      const { service, magicLinkRepo, authService, userService } = makeService();
+      const row = { id: 5, userId: 2, revokedAt: null, isActive: true, expiresAt: null, label: 'Demo' };
+      magicLinkRepo.findByTokenHash.mockResolvedValue(row);
+      const user = { id: 2, active: true, username: 'demo' };
+      userService.findById.mockResolvedValue(user);
+
+      const result = await service.authenticate('valid-token');
+
+      expect(magicLinkRepo.updateUsage).toHaveBeenCalledWith(5);
+      expect(authService.issueTokensForUser).not.toHaveBeenCalled();
+      expect(result).toEqual({ user, token: row });
+    });
+  });
+
   describe('listTokens', () => {
     it('delegates to repository', async () => {
       const { service, magicLinkRepo } = makeService();

@@ -11,6 +11,8 @@ function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
+export type MagicAccessToken = typeof schema.magicAccessTokens.$inferSelect;
+
 @Injectable()
 export class MagicLinkRepository {
   constructor(@Inject(DB) private readonly db: NodePgDatabase<typeof schema>) {}
@@ -39,7 +41,7 @@ export class MagicLinkRepository {
     return row;
   }
 
-  async findByTokenHash(tokenHash: string) {
+  async findByTokenHash(tokenHash: string): Promise<MagicAccessToken | undefined> {
     return this.db.query.magicAccessTokens.findFirst({
       where: eq(schema.magicAccessTokens.tokenHash, tokenHash),
     });

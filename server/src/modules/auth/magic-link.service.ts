@@ -9,12 +9,17 @@ import { AUDIT_EVENT, AuditEventsService } from '../audit/audit-events.service';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { CreateMagicLinkDto } from './dto/create-magic-link.dto';
-import { MagicLinkRepository } from './magic-link.repository';
+import { MagicAccessToken, MagicLinkRepository } from './magic-link.repository';
 
 const MAX_TOKENS_PER_USER = 25;
 
 function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
+}
+
+export interface AuthenticatedMagicLink {
+  user: RequestUser;
+  token: MagicAccessToken;
 }
 
 @Injectable()
@@ -76,32 +81,23 @@ export class MagicLinkService {
     };
   }
 
-  async loginWithToken(rawToken: string, reply: FastifyReply, ip?: string) {
+  async authenticate(rawToken: string): Promise<AuthenticatedMagicLink> {
     const tokenHash = sha256(rawToken);
     const row = await this.magicLinkRepo.findByTokenHash(tokenHash);
 
-    if (!row) {
-      this.logger.warn('[magic_link.login] [fail] errorClass=UnauthorizedException error="token not found" - magic link login failed');
-      throw new UnauthorizedException('Invalid or expired magic link');
-    }
+    const reason = !row
+      ? 'token not found'
+      : row.revokedAt
+        ? 'token revoked'
+        : !row.isActive
+          ? 'token deactivated'
+          : row.expiresAt && row.expiresAt < new Date()
+            ? 'token expired'
+            : null;
 
-    if (row.revokedAt) {
+    if (!row || reason) {
       this.logger.warn(
-        `[magic_link.login] [fail] tokenId=${row.id} userId=${row.userId} errorClass=UnauthorizedException error="token revoked" - magic link login failed`,
-      );
-      throw new UnauthorizedException('Invalid or expired magic link');
-    }
-
-    if (!row.isActive) {
-      this.logger.warn(
-        `[magic_link.login] [fail] tokenId=${row.id} userId=${row.userId} errorClass=UnauthorizedException error="token deactivated" - magic link login failed`,
-      );
-      throw new UnauthorizedException('Invalid or expired magic link');
-    }
-
-    if (row.expiresAt && row.expiresAt < new Date()) {
-      this.logger.warn(
-        `[magic_link.login] [fail] tokenId=${row.id} userId=${row.userId} errorClass=UnauthorizedException error="token expired" - magic link login failed`,
+        `[magic_link.authenticate] [fail] ${row ? `tokenId=${row.id} userId=${row.userId} ` : ''}errorClass=UnauthorizedException error="${reason}" - magic link authentication failed`,
       );
       throw new UnauthorizedException('Invalid or expired magic link');
     }
@@ -109,23 +105,28 @@ export class MagicLinkService {
     const user = await this.userService.findById(row.userId).catch(() => null);
     if (!user || !user.active) {
       this.logger.warn(
-        `[magic_link.login] [fail] tokenId=${row.id} userId=${row.userId} errorClass=UnauthorizedException error="user inactive or not found" - magic link login failed`,
+        `[magic_link.authenticate] [fail] tokenId=${row.id} userId=${row.userId} errorClass=UnauthorizedException error="user inactive or not found" - magic link authentication failed`,
       );
       throw new UnauthorizedException('Invalid or expired magic link');
     }
 
     await this.magicLinkRepo.updateUsage(row.id);
-    const result = await this.authService.issueTokensForUser(row.userId, reply);
+    return { user, token: row };
+  }
 
-    this.logger.log(`[magic_link.login] [end] tokenId=${row.id} userId=${row.userId} ip=${ip ?? 'unknown'} - magic link login completed`);
+  async loginWithToken(rawToken: string, reply: FastifyReply, ip?: string) {
+    const { user, token } = await this.authenticate(rawToken);
+    const result = await this.authService.issueTokensForUser(user.id, reply);
+
+    this.logger.log(`[magic_link.login] [end] tokenId=${token.id} userId=${user.id} ip=${ip ?? 'unknown'} - magic link login completed`);
 
     this.auditEvents.emit(AUDIT_EVENT, {
-      userId: row.userId,
+      userId: user.id,
       actorUsername: user.username,
       action: AuditAction.MagicLinkLogin,
       resource: AuditResource.MagicLinkToken,
-      resourceId: row.id,
-      description: `Magic link login for user '${user.username}' (link: '${row.label}')`,
+      resourceId: token.id,
+      description: `Magic link login for user '${user.username}' (link: '${token.label}')`,
       ip,
     });
 
