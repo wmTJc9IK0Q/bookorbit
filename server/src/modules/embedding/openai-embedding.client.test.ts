@@ -11,6 +11,7 @@ function makeConfig(overrides: Partial<EmbeddingConfig> = {}): EmbeddingConfig {
     apiBaseUrl: 'https://x/v1',
     apiKey: 'k',
     model: 'm',
+    contentModel: undefined,
     timeoutMs: 30000,
     ...overrides,
   };
@@ -77,5 +78,35 @@ describe('OpenAiEmbeddingClient', () => {
     expect(new OpenAiEmbeddingClient(makeConfig()).isEnabled()).toBe(true);
     expect(new OpenAiEmbeddingClient(makeConfig({ apiBaseUrl: undefined })).isEnabled()).toBe(false);
     expect(new OpenAiEmbeddingClient(makeConfig({ model: undefined })).isEnabled()).toBe(false);
+  });
+
+  it('embedMany posts an array input and returns one vector per input', async () => {
+    const client = new OpenAiEmbeddingClient(makeConfig());
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(jsonResponse({ data: [{ embedding: Array(1536).fill(0.01) }, { embedding: Array(1536).fill(0.02) }] }));
+
+    const result = await client.embedMany(['a', 'b'], 1536, 'content-model');
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toHaveLength(1536);
+    const [, init] = fetchSpy.mock.calls[0];
+    const parsed = JSON.parse(init?.body as string);
+    expect(parsed.input).toEqual(['a', 'b']);
+    expect(parsed.dimensions).toBe(1536);
+    expect(parsed.model).toBe('content-model');
+  });
+
+  it('embedMany returns an empty array without calling fetch for no inputs', async () => {
+    const client = new OpenAiEmbeddingClient(makeConfig());
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    expect(await client.embedMany([], 1536)).toEqual([]);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('embedMany rejects when the response count does not match inputs', async () => {
+    const client = new OpenAiEmbeddingClient(makeConfig());
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse({ data: [{ embedding: Array(1536).fill(0) }] }));
+    await expect(client.embedMany(['a', 'b'], 1536)).rejects.toThrow('count=1');
   });
 });

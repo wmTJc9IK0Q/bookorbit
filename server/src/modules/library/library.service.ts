@@ -142,6 +142,7 @@ export class LibraryService {
       fileWriteAudioEnabled: dto.fileWriteAudioEnabled ?? true,
       fileWriteAudioMaxFileSizeMb: dto.fileWriteAudioMaxFileSizeMb ?? 500,
       fileRenameEnabled: dto.fileRenameEnabled ?? false,
+      embedContent: dto.embedContent ?? false,
     });
 
     const folders = await Promise.all(folderPaths.map((path) => this.libraryRepo.insertFolder({ libraryId: library.id, path })));

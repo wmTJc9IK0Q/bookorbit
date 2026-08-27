@@ -120,6 +120,10 @@ export class UpdateLibraryDto {
 
   @IsOptional()
   @IsBoolean()
+  embedContent?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   fileWriteWriteCover?: boolean;
 
   @IsOptional()

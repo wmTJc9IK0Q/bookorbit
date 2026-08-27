@@ -49,6 +49,8 @@ import { MetadataModule } from './modules/metadata/metadata.module';
 import { NarratorModule } from './modules/narrator/narrator.module';
 import { ReaderPreferencesModule } from './modules/reader-preferences/reader-preferences.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
+import { ContentEmbeddingModule } from './modules/content-embedding/content-embedding.module';
+import { ContentSearchModule } from './modules/content-search/content-search.module';
 import { UserPreferencesModule } from './modules/user-preferences/user-preferences.module';
 import { ScannerModule } from './modules/scanner/scanner.module';
 import { SeedModule } from './modules/seed/seed.module';
@@ -132,6 +134,8 @@ import { BookMoveModule } from './modules/book-move/book-move.module';
     CustomMetadataModule,
     CustomIconModule,
     RecommendationModule,
+    ContentEmbeddingModule,
+    ContentSearchModule,
     KoboModule,
     OpdsModule,
     BookmarkModule,

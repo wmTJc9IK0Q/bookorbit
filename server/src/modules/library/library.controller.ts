@@ -10,6 +10,7 @@ import { Auditable } from '../../common/decorators/auditable.decorator';
 import type { RequestUser } from '../../common/types/request-user';
 import { BookQueryPipe, JumpBucketsQueryPipe } from '../book/pipes/book-query.pipe';
 import { BookService } from '../book/book.service';
+import { BookContentEmbedderService } from '../content-embedding/book-content-embedder.service';
 import { BulkRenamePreviewQueryDto } from './dto/bulk-rename-preview-query.dto';
 import { CreateLibraryDto } from './dto/create-library.dto';
 import { GrantLibraryAccessDto } from './dto/grant-library-access.dto';
@@ -26,6 +27,7 @@ export class LibraryController {
     private readonly libraryService: LibraryService,
     private readonly bookService: BookService,
     private readonly bulkRenameService: BulkRenameService,
+    private readonly contentEmbedder: BookContentEmbedderService,
   ) {}
 
   @Get()
@@ -101,6 +103,18 @@ export class LibraryController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.libraryService.remove(id);
+  }
+
+  @Post(':id/embed-content')
+  @RequirePermission(Permission.ManageLibraries)
+  @Auditable({
+    action: AuditAction.LibraryUpdate,
+    resource: AuditResource.Library,
+    getResourceId: (req) => parseInt(req.params['id'] as string, 10),
+    description: (req) => `Queued content embedding for library #${req.params['id']}`,
+  })
+  embedContent(@Param('id', ParseIntPipe) id: number) {
+    return this.contentEmbedder.embedLibraryContent(id);
   }
 
   @Post('prescan')

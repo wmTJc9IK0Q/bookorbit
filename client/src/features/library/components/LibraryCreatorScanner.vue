@@ -5,6 +5,7 @@ import { Lock, Plus, X } from '@lucide/vue'
 import type { OrganizationMode } from '@bookorbit/types'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { FORMAT_LABELS } from '../composables/useLibraryCreator'
+import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 
 const { t } = useI18n()
 
@@ -13,12 +14,14 @@ const props = defineProps<{
   organizationModeLocked?: boolean
   allowedFormats: string[]
   excludePatterns: string[]
+  embedContent?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:organizationMode': [value: OrganizationMode]
   'update:allowedFormats': [value: string[]]
   'update:excludePatterns': [value: string[]]
+  'update:embedContent': [value: boolean]
 }>()
 
 // ── Scan mode ─────────────────────────────────────────────────────────────────
@@ -34,6 +37,10 @@ function handleSelectFolderMode() {
 
 function handleSelectFileMode() {
   handleSelectMode('book_per_file')
+}
+
+function handleEmbedContentToggle() {
+  emit('update:embedContent', !props.embedContent)
 }
 
 // ── Allowed formats ──────────────────────────────────────────────────────────
@@ -250,6 +257,20 @@ function onPatternKeydown(e: KeyboardEvent) {
           </span>
         </div>
       </div>
+    </div>
+
+    <div class="flex items-start justify-between gap-4 rounded-lg border border-border bg-card p-4">
+      <div>
+        <p class="text-sm font-medium text-foreground">{{ t('library.creator.scanner.embedContent.title') }}</p>
+        <p class="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {{ t('library.creator.scanner.embedContent.hint') }}
+        </p>
+      </div>
+      <ToggleSwitch
+        :model-value="embedContent ?? false"
+        :aria-label="t('library.creator.scanner.embedContent.title')"
+        @update:model-value="handleEmbedContentToggle"
+      />
     </div>
   </div>
 </template>

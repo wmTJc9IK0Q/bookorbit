@@ -9,11 +9,13 @@ import { z } from 'zod';
 import type { RequestUser } from '../../common/types/request-user';
 import { appConfig } from '../../config/config';
 import { BookService } from '../book/book.service';
+import { ContentSearchService } from '../content-search/content-search.service';
 
 @Injectable()
 export class McpService {
   constructor(
     private readonly bookService: BookService,
+    private readonly contentSearchService: ContentSearchService,
     @Inject(appConfig.KEY) private readonly config: ConfigType<typeof appConfig>,
   ) {}
 
@@ -51,6 +53,23 @@ export class McpService {
 
         const payload = { total: result.total, page: result.page, size: result.size, books };
         return { content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }] };
+      },
+    );
+
+    server.registerTool(
+      'search_book_content',
+      {
+        title: 'Search book content',
+        description:
+          'Semantic search over the full text of books that have content embedding enabled. Returns the most relevant passages the caller can access.',
+        inputSchema: {
+          query: z.string().min(1).describe('Natural-language description of the passage or topic to find'),
+          limit: z.number().int().min(1).max(25).optional().describe('Maximum passages to return, 1-25 (default 10)'),
+        },
+      },
+      async ({ query, limit }) => {
+        const result = await this.contentSearchService.search(user, { query, limit });
+        return { content: [{ type: 'text' as const, text: JSON.stringify(result.hits, null, 2) }] };
       },
     );
 

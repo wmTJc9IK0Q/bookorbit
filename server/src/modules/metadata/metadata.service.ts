@@ -28,6 +28,7 @@ import { SeriesExpectedCountService } from '../../common/services/series-expecte
 import { SeriesMembershipService } from '../../common/services/series-membership.service';
 import { refreshPrimaryAuthorSortNamesForAuthors, refreshPrimaryAuthorSortNamesForBooks } from '../../db/book-author-sort-key';
 import { BookEmbedderService } from '../embedding/book-embedder.service';
+import { BookContentEmbedderService } from '../content-embedding/book-content-embedder.service';
 import { BookMetadataLockService } from '../book-metadata-lock/book-metadata-lock.service';
 import { ComicMetadataRepository } from './comic-metadata.repository';
 import { MetadataScoreService } from '../metadata-score/metadata-score.service';
@@ -81,6 +82,7 @@ export class MetadataService {
     @Optional() private readonly seriesIdentity?: SeriesIdentityService,
     @Optional() private readonly seriesMemberships?: SeriesMembershipService,
     @Optional() private readonly seriesExpectedCount?: SeriesExpectedCountService,
+    @Optional() private readonly contentEmbedder?: BookContentEmbedderService,
   ) {
     this.appDataPath = this.config.get<string>('storage.appDataPath')!;
   }
@@ -652,6 +654,11 @@ export class MetadataService {
     this.embedder?.embedBook(bookId).catch((error: Error) => {
       this.logger.warn(
         `[metadata.embedding] [fail] bookId=${bookId} errorClass=${error.name} error="${sanitizeLogValue(error.message)}" - book embedding failed`,
+      );
+    });
+    this.contentEmbedder?.embedBookContent(bookId).catch((error: Error) => {
+      this.logger.warn(
+        `[content.embed] [fail] bookId=${bookId} errorClass=${error.name} error="${sanitizeLogValue(error.message)}" - book content embedding failed`,
       );
     });
   }

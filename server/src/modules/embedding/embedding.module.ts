@@ -7,6 +7,6 @@ import { OpenAiEmbeddingClient } from './openai-embedding.client';
 
 @Module({
   providers: [BookEmbedderService, BookEmbedderRepository, BookEmbeddingVectorizerService, OpenAiEmbeddingClient],
-  exports: [BookEmbedderService],
+  exports: [BookEmbedderService, OpenAiEmbeddingClient, BookEmbeddingVectorizerService],
 })
 export class EmbeddingModule {}

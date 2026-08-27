@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module';
 import { BookModule } from '../book/book.module';
+import { ContentSearchModule } from '../content-search/content-search.module';
 import { McpAuthGuard } from './mcp-auth.guard';
 import { McpController } from './mcp.controller';
 import { McpService } from './mcp.service';
 
 @Module({
-  imports: [AuthModule, BookModule],
+  imports: [AuthModule, BookModule, ContentSearchModule],
   controllers: [McpController],
   providers: [McpService, McpAuthGuard],
 })

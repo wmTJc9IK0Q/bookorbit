@@ -3,6 +3,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { AchievementModule } from '../achievement/achievement.module';
 import { AppSettingsModule } from '../app-settings/app-settings.module';
 import { BookModule } from '../book/book.module';
+import { ContentEmbeddingModule } from '../content-embedding/content-embedding.module';
 import { FileWriteModule } from '../file-write/file-write.module';
 import { NotificationModule } from '../notification/notification.module';
 import { PathModule } from '../path/path.module';
@@ -22,6 +23,7 @@ import { LibraryService } from './library.service';
     forwardRef(() => NotificationModule),
     AppSettingsModule,
     PathModule,
+    ContentEmbeddingModule,
   ],
   controllers: [LibraryController],
   providers: [LibraryService, LibraryRepository, LibraryScanSchedulerService, BulkRenameService],

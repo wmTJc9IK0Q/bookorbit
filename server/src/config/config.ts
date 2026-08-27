@@ -63,6 +63,7 @@ export const embeddingConfig = registerAs('embedding', () => ({
   apiBaseUrl: process.env.EMBEDDING_API_BASE_URL?.trim() || undefined,
   apiKey: process.env.EMBEDDING_API_KEY?.trim() || undefined,
   model: process.env.EMBEDDING_MODEL?.trim() || undefined,
+  contentModel: process.env.EMBEDDING_CONTENT_MODEL?.trim() || undefined,
   timeoutMs: parsePositiveInteger(process.env.EMBEDDING_API_TIMEOUT_MS, 30_000),
 }));
 

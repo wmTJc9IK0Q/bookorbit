@@ -6661,6 +6661,10 @@
           "hintAfter": ").",
           "add": "Add",
           "empty": "No patterns added."
+        },
+        "embedContent": {
+          "title": "Embed book content",
+          "hint": "Indexes the full text of EPUB and PDF books for semantic content search. Uses the configured embedding server when available, otherwise a built-in local model. Adds processing cost on large libraries."
         }
       },
       "metadata": {

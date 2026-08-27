@@ -104,6 +104,19 @@ export class BookEmbeddingVectorizerService {
     return this.l2normalize(Array.from(accumulator));
   }
 
+  /**
+   * Local fallback for free-text content: hashes tokens into a `dimensions`-length
+   * bag-of-words vector, L2-normalized. Used for both content chunks and search
+   * queries so they share one hashed space and cosine similarity stays meaningful.
+   */
+  buildTextVector(text: string, dimensions: number): number[] {
+    const accumulator = new Float64Array(dimensions);
+    for (const token of this.tokenize(text, Number.POSITIVE_INFINITY)) {
+      accumulator[this.fnv32(token) % dimensions] += 1;
+    }
+    return this.l2normalize(Array.from(accumulator));
+  }
+
   private tokenize(text: string, maxTokens: number): string[] {
     const tokens: string[] = [];
 

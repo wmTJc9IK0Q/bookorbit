@@ -76,6 +76,7 @@ function makeLibrary(overrides: Partial<Library> = {}): Library {
     fileWriteAudioEnabled: false,
     fileWriteAudioMaxFileSizeMb: 500,
     fileRenameEnabled: true,
+    embedContent: false,
     folders: [],
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
